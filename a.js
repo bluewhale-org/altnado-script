@@ -1,12 +1,12 @@
 function runAltnado() {
   console.log('(Altnado) Adding alt text to images')
 
-  const images = document.querySelectorAll('img')
-  images.forEach((img) => {
-    if (img.naturalWidth > 100 && img.naturalHeight > 100) {
-      processImage(img)
-    }
-  })
+  const images = Array.from(document.querySelectorAll('img'))
+    .filter(img => img.naturalWidth > 100 && img.naturalHeight > 100)
+
+  if (images.length > 0) {
+    processImages(images)
+  }
 }
 
 function getFullImagePath(src) {
@@ -16,34 +16,40 @@ function getFullImagePath(src) {
   return new URL(src, window.location.origin).href
 }
 
-function processImage(img, pageUrl) {
-  const imageSrc = getFullImagePath(img.src)
+function processImages(images, pageUrl) {
+  const imageSrcs = images.map(img => getFullImagePath(img.src))
+  console.debug('(Altnado) Processing images:', imageSrcs)
 
-  console.debug('(Altnado) Processing image:', imageSrc)
-
-  fetch(
-    'https://www.altnado.com/api/images?url=' + encodeURIComponent(imageSrc),
-  )
+  fetch('https://www.altnado.com/api/images', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ urls: imageSrcs }),
+  })
     .then((response) => {
-      console.debug('(Altnado) Received response from API for image:', imageSrc)
+      console.debug('(Altnado) Received response from API')
       return response.json()
     })
     .then((data) => {
-      console.debug('(Altnado) Parsed JSON data for image:', imageSrc, data)
-      updateAltText(img, data)
+      console.debug('(Altnado) Parsed JSON data:', data)
+      updateAltTexts(imageSrcs, data)
     })
     .catch((error) =>
-      console.debug('(Altnado) Error processing image:', imageSrc, error),
+      console.debug('(Altnado) Error processing images:', error)
     )
 }
 
-function updateAltText(img, data) {
-  if (data.alt !== null) {
-    console.debug('(Altnado) Updating alt text for image:', img.src)
-    img.alt = data.alt
-  } else {
-    console.debug('(Altnado) No alt text update needed for image:', img.src)
-  }
+function updateAltTexts(images, data) {
+  images.forEach((img) => {
+    const imageSrc = getFullImagePath(img.src)
+    if (data[imageSrc] && data[imageSrc].alt !== null) {
+      console.debug('(Altnado) Updating alt text for image:', imageSrc)
+      img.alt = data[imageSrc].alt
+    } else {
+      console.debug('(Altnado) No alt text update needed for image:', imageSrc)
+    }
+  })
 }
 
 if (document.readyState === 'loading') {
