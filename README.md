@@ -1,6 +1,6 @@
 # Altnado
 
-[Altnado](https://www.altnado.com) generates image text automatically for all images on your site with a single line of code. All you have to do is [sign up for an acocount](https://www.altnado.com/signup) and include a script in the header of your pages.
+[Altnado](https://www.altnado.com) generates image text automatically for all images on your site with a single line of code. All you have to do is [sign up for an account](https://www.altnado.com/signup) and include a script in the header of your pages.
 
 ### altnado-script
 
