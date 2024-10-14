@@ -4,9 +4,13 @@ function runAltnado() {
   const images = Array.from(document.querySelectorAll('img'))
     .filter(img => img.naturalWidth > 100 && img.naturalHeight > 100)
 
-  if (images.length > 0) {
-    processImages(images)
-  }
+  const siteId = getSiteId()
+  processImages(images, siteId)
+}
+
+function getSiteId() {
+  const script = document.querySelector('script[src*="s.altnado.com/a.js"]')
+  return script ? script.getAttribute('site-id') : null
 }
 
 function getFullImagePath(src) {
@@ -16,7 +20,7 @@ function getFullImagePath(src) {
   return new URL(src, window.location.origin).href
 }
 
-function processImages(images, pageUrl) {
+function processImages(images, siteId) {
   const imageSrcs = images.map(img => getFullImagePath(img.src))
   console.debug('(Altnado) Processing images:', imageSrcs)
 
@@ -25,7 +29,10 @@ function processImages(images, pageUrl) {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ urls: imageSrcs }),
+    body: JSON.stringify({
+      images: imageSrcs,
+      siteId: siteId
+    }),
   })
     .then((response) => {
       console.debug('(Altnado) Received response from API')
@@ -33,7 +40,7 @@ function processImages(images, pageUrl) {
     })
     .then((data) => {
       console.debug('(Altnado) Parsed JSON data:', data)
-      updateAltTexts(imageSrcs, data)
+      updateAltTexts(images, data)
     })
     .catch((error) =>
       console.debug('(Altnado) Error processing images:', error)
