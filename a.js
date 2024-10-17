@@ -1,5 +1,6 @@
 let processedImages = new Set();
 let altTexts = {};
+let updateCount = new Map();
 
 function runAltnado() {
   console.log('(Altnado) Adding alt text to images');
@@ -67,6 +68,7 @@ function updateAltTexts(images) {
       console.debug('(Altnado) Updating alt text for image:', imageSrc);
       img.alt = altTexts[imageSrc].alt;
       processedImages.add(imageSrc);
+      updateCount.set(imageSrc, 1);
     } else {
       console.debug('(Altnado) No alt text update needed for image:', imageSrc);
     }
@@ -80,9 +82,13 @@ function setupMutationObserver() {
         const img = mutation.target;
         const imageSrc = getFullImagePath(img.src);
         if (processedImages.has(imageSrc) && altTexts[imageSrc] && altTexts[imageSrc].alt !== img.alt) {
-          console.debug('(Altnado) Re-updating alt text for image:', imageSrc);
-          img.alt = altTexts[imageSrc].alt;
-          observer.disconnect();
+          const count = updateCount.get(imageSrc) || 0;
+          if (count < 2) {
+            console.debug('(Altnado) Re-updating alt text for image:', imageSrc);
+            img.alt = altTexts[imageSrc].alt;
+          } else {
+            console.debug('(Altnado) Max updates reached for image:', imageSrc);
+          }
         }
       }
     });
