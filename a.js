@@ -24,9 +24,13 @@ function getFullImagePath(src) {
   return new URL(src, window.location.origin).href;
 }
 
+function getImageIdentifier(img) {
+  return img.src + '|' + (img.getAttribute('data-src') || '');
+}
+
 function processImages(images, siteId) {
   const imageSrcs = images
-    .filter(img => !processedImages.has(getFullImagePath(img.src)))
+    .filter(img => !processedImages.has(getImageIdentifier(img)))
     .map(img => getFullImagePath(img.src));
 
   if (imageSrcs.length === 0) {
@@ -64,11 +68,12 @@ function processImages(images, siteId) {
 function updateAltTexts(images) {
   images.forEach((img) => {
     const imageSrc = getFullImagePath(img.src);
+    const imageIdentifier = getImageIdentifier(img);
     if (altTexts[imageSrc] && altTexts[imageSrc].alt !== null) {
       console.debug('(Altnado) Updating alt text for image:', imageSrc);
       img.alt = altTexts[imageSrc].alt;
-      processedImages.add(imageSrc);
-      updateCount.set(imageSrc, 1);
+      processedImages.add(imageIdentifier);
+      updateCount.set(imageIdentifier, 1);
     } else {
       console.debug('(Altnado) No alt text update needed for image:', imageSrc);
     }
@@ -78,11 +83,12 @@ function updateAltTexts(images) {
 function setupMutationObserver() {
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'alt') {
+      if (mutation.type === 'attributes' && (mutation.attributeName === 'alt' || mutation.attributeName === 'src')) {
         const img = mutation.target;
         const imageSrc = getFullImagePath(img.src);
-        if (processedImages.has(imageSrc) && altTexts[imageSrc] && altTexts[imageSrc].alt !== img.alt) {
-          const count = updateCount.get(imageSrc) || 0;
+        const imageIdentifier = getImageIdentifier(img);
+        if (altTexts[imageSrc] && altTexts[imageSrc].alt !== null && altTexts[imageSrc].alt !== img.alt) {
+          const count = updateCount.get(imageIdentifier) || 0;
           if (count < 2) {
             console.debug('(Altnado) Re-updating alt text for image:', imageSrc);
             img.alt = altTexts[imageSrc].alt;
@@ -94,7 +100,7 @@ function setupMutationObserver() {
     });
   });
 
-  const config = { attributes: true, attributeFilter: ['alt'], subtree: true };
+  const config = { attributes: true, attributeFilter: ['alt', 'src'], subtree: true };
   observer.observe(document.body, config);
 }
 
